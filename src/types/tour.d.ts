@@ -45,9 +45,9 @@ declare class Tour extends Evented {
   /**
    * Gets the step from a given id
    * @param id The id of the step to retrieve
-   * @return The step corresponding to the `id`
+   * @return The step corresponding to the `id` or null if no step matches the `id`
    */
-  getById(id: number | string): Step;
+  getById(id: number | string): Step | null;
 
   /**
    * Gets the current step
@@ -88,12 +88,17 @@ declare class Tour extends Evented {
    * Start the tour
    */
   start(): void;
+
+  /**
+   * An array of Step instances
+   */
+  steps: Array<Step>;
 }
 
 declare namespace Tour {
   interface TourOptions {
     /**
-     * The prefix to add to all the `shepherd-*` class names.
+     * The prefix to add to the `shepherd-enabled` and `shepherd-target` class names as well as the `data-shepherd-step-id`.
      */
     classPrefix?: string;
 

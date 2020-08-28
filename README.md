@@ -16,7 +16,7 @@
 ![Download count all time](https://img.shields.io/npm/dt/shepherd.js.svg)
 [![npm](https://img.shields.io/npm/dm/shepherd.js.svg)]()
 ![npm bundle size](https://img.shields.io/bundlephobia/minzip/shepherd.js.svg)
-[![Build Status](https://travis-ci.org/shipshapecode/shepherd.svg?branch=master)](https://travis-ci.org/shipshapecode/shepherd)
+[![Build Status](https://travis-ci.com/shipshapecode/shepherd.svg?branch=master)](https://travis-ci.com/shipshapecode/shepherd)
 [![Maintainability](https://api.codeclimate.com/v1/badges/b295b0cc0d828ccc1b76/maintainability)](https://codeclimate.com/github/shipshapecode/shepherd/maintainability)
 [![Test Coverage](https://api.codeclimate.com/v1/badges/b295b0cc0d828ccc1b76/test_coverage)](https://codeclimate.com/github/shipshapecode/shepherd/test_coverage)
 [![StackShare](https://img.shields.io/badge/Follow%20on-StackShare-blue.svg?logo=stackshare&style=flat)](https://stackshare.io/shepherd-js)  
@@ -24,7 +24,7 @@
 
 <a href="https://shepherdjs.dev/">
   <img 
-    src="/demo/assets/img/demo.png" 
+    src="https://shepherdjs.dev/landing/assets/img/demo.png" 
     alt="Guide your users through a tour of your app" 
     style="height: auto; max-width: 800px; width: 100%;"/>
 </a>
@@ -32,27 +32,10 @@
 Browsers support
 ----------------------------------------------------------
 
-| [<img src="https://raw.githubusercontent.com/alrra/browser-logos/master/src/edge/edge_48x48.png" alt="IE / Edge" width="24px" height="24px" />](http://godban.github.io/browsers-support-badges/)</br>IE / Edge | [<img src="https://raw.githubusercontent.com/alrra/browser-logos/master/src/firefox/firefox_48x48.png" alt="Firefox" width="24px" height="24px" />](http://godban.github.io/browsers-support-badges/)</br>Firefox | [<img src="https://raw.githubusercontent.com/alrra/browser-logos/master/src/chrome/chrome_48x48.png" alt="Chrome" width="24px" height="24px" />](http://godban.github.io/browsers-support-badges/)</br>Chrome | [<img src="https://raw.githubusercontent.com/alrra/browser-logos/master/src/safari/safari_48x48.png" alt="Safari" width="24px" height="24px" />](http://godban.github.io/browsers-support-badges/)</br>Safari |
+| [<img src="https://raw.githubusercontent.com/alrra/browser-logos/master/src/edge/edge_48x48.png" alt="IE / Edge" width="24px" height="24px" />](http://godban.github.io/browsers-support-badges/)</br>Edge | [<img src="https://raw.githubusercontent.com/alrra/browser-logos/master/src/firefox/firefox_48x48.png" alt="Firefox" width="24px" height="24px" />](http://godban.github.io/browsers-support-badges/)</br>Firefox | [<img src="https://raw.githubusercontent.com/alrra/browser-logos/master/src/chrome/chrome_48x48.png" alt="Chrome" width="24px" height="24px" />](http://godban.github.io/browsers-support-badges/)</br>Chrome | [<img src="https://raw.githubusercontent.com/alrra/browser-logos/master/src/safari/safari_48x48.png" alt="Safari" width="24px" height="24px" />](http://godban.github.io/browsers-support-badges/)</br>Safari |
 | --------- | --------- | --------- | --------- |
 | Edge| last 2 versions| last 2 versions| last 2 versions
 
-IE 11
-----------------------------------------------------------
-
-Shepherd v6.x no longer ships with the required polyfills to work with IE 11 out of the box,
-however, if you are supporting IE 11 already, you are probably shipping some polyfills.
-The only required polyfills are `Object.assign`, `Symbol`, and `element.matches` for things to work. 
-Our demo app includes the polyfills using [Polyfill.io](https://polyfill.io/v3/), but Babel, core-js, etc would all work.
-
-```html
-<script src="https://polyfill.io/v3/polyfill.min.js?features=Object.assign%2CSymbol%2CElement.prototype.matches"></script>
-```
-
-You will also need a [Web Components polyfill](https://www.webcomponents.org/polyfills), which we include with:
-
-```html
-<script src="https://cdn.jsdelivr.net/npm/@webcomponents/webcomponentsjs@2.2.10/webcomponents-bundle.js"></script>
-```
 
 Documentation
 ----------------------------------------------------------

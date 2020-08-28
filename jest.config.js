@@ -1,8 +1,6 @@
 // For a detailed explanation regarding each configuration property, visit:
 // https://jestjs.io/docs/en/configuration.html
 
-const sveltePreprocess = require('svelte-preprocess');
-
 module.exports = {
   // Automatically clear mock calls and instances between every test
   clearMocks: true,
@@ -36,17 +34,12 @@ module.exports = {
   // A map from regular expressions to paths to transformers
   transform: {
     '^.+\\.js$': 'babel-jest',
-    '^.+\\.svelte$': ['jest-transform-svelte', {
-      preprocess: sveltePreprocess(),
-      debug: false,
+    '^.+\\.svelte$': ['svelte-jester', {
+      preprocess: true,
       compilerOptions: {
         dev: false
       }
     }],
     '.+\\.(css|styl|less|sass|scss)$': 'jest-transform-css'
-  },
-
-  transformIgnorePatterns: [
-    '/node_modules/(?!tether).+\\.js$'
-  ]
+  }
 };
