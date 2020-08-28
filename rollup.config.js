@@ -1,7 +1,7 @@
 import babel from 'rollup-plugin-babel';
 import browsersync from 'rollup-plugin-browsersync';
 import commonjs from 'rollup-plugin-commonjs';
-import { eslint } from 'rollup-plugin-eslint';
+import compiler from '@ampproject/rollup-plugin-closure-compiler';
 import filesize from 'rollup-plugin-filesize';
 import license from 'rollup-plugin-license';
 import postcss from 'rollup-plugin-postcss';
@@ -9,7 +9,6 @@ import replace from 'rollup-plugin-replace';
 import resolve from 'rollup-plugin-node-resolve';
 import sveltePreprocess from 'svelte-preprocess';
 import svelte from 'rollup-plugin-svelte';
-import { terser } from 'rollup-plugin-terser';
 import visualizer from 'rollup-plugin-visualizer';
 
 const pkg = require('./package.json');
@@ -18,9 +17,6 @@ const banner = ['/*!', pkg.name, pkg.version, '*/\n'].join(' ');
 const env = process.env.DEVELOPMENT ? 'development' : 'production';
 
 const plugins = [
-  eslint({
-    include: '**/*.js'
-  }),
   svelte({
     preprocess: sveltePreprocess(),
     emitCss: true
@@ -37,6 +33,7 @@ const plugins = [
   }),
   postcss({
     plugins: [
+      require('tailwindcss'),
       require('autoprefixer'),
       require('cssnano')
     ],
@@ -54,15 +51,14 @@ if (process.env.DEVELOPMENT) {
       notify: false,
       open: true,
       server: {
-        baseDir: 'demo',
         routes: {
           '/dist/css/shepherd.css': 'dist/css/shepherd.css',
           '/dist/js/shepherd.js': 'dist/js/shepherd.js',
-          '/demo/js/prism.js': 'demo/js/prism.js',
-          '/demo/js/welcome.js': 'demo/js/welcome.js',
-          '/demo/css/prism.css': 'demo/css/prism.css',
-          '/demo/css/welcome.css': 'demo/css/welcome.css',
-          '/demo/sheep.svg': 'demo/sheep.svg'
+          '/landing/js/prism.js': 'landing/js/prism.js',
+          '/landing/js/welcome.js': 'landing/js/welcome.js',
+          '/landing/css/prism.css': 'landing/css/prism.css',
+          '/landing/css/welcome.css': 'landing/css/welcome.css',
+          '/landing/sheep.svg': 'landing/sheep.svg'
         }
       }
     })
@@ -135,7 +131,7 @@ if (!process.env.DEVELOPMENT) {
           ],
           extract: 'dist/css/shepherd.css'
         }),
-        terser(),
+        compiler(),
         license({
           banner
         }),

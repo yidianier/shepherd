@@ -1,11 +1,23 @@
 import { Step } from '../../../src/js/step.js';
-import { getTetherOptions, parseAttachTo } from '../../../src/js/utils/general.js';
+import { getPopperOptions, parseAttachTo } from '../../../src/js/utils/general.js';
 
 describe('General Utils', function() {
+  let optionsElement;
+
+  beforeEach(() => {
+    optionsElement = document.createElement('div');
+    optionsElement.classList.add('options-test');
+    document.body.appendChild(optionsElement);
+  });
+
+  afterEach(() => {
+    document.body.removeChild(optionsElement);
+  });
+
   describe('parseAttachTo()', function() {
     it('fails if element does not exist', function() {
       const step = new Step({}, {
-        attachTo: { element: '.scroll-test', on: 'center' }
+        attachTo: { element: '.element-does-not-exist', on: 'center' }
       });
 
       const { element } = parseAttachTo(step);
@@ -13,49 +25,38 @@ describe('General Utils', function() {
     });
   });
 
-  describe('getTetherOptions', function() {
-    it('classes set correctly', function() {
+  describe('getPopperOptions', function() {
+    it('modifiers can be overridden', function() {
       const step = new Step({}, {
-        attachTo: { element: '.scroll-test', on: 'center' },
-        tetherOptions: {
-          classes: {
-            element: 'bar'
-          }
-        }
-      });
-
-      const tetherOptions = getTetherOptions(parseAttachTo(step), step);
-      expect(tetherOptions.classes.element).toBe('bar');
-    });
-
-    it('constraints can be overridden', function() {
-      const step = new Step({}, {
-        attachTo: { element: '.scroll-test', on: 'center' },
-        tetherOptions: {
-          constraints: [
+        attachTo: { element: '.options-test', on: 'right' },
+        popperOptions: {
+          modifiers: [
             {
-              foo: 'bar'
+              name: 'preventOverflow',
+              options: {
+                altAxis: false
+              }
             }
           ]
         }
       });
 
-      const tetherOptions = getTetherOptions(parseAttachTo(step), step);
-      expect(tetherOptions.constraints[0].foo).toBe('bar');
+      const popperOptions = getPopperOptions(step.options.attachTo, step);
+      expect(popperOptions.modifiers[1].options.altAxis).toBe(false);
     });
 
-    it('optimizations set correctly', function() {
+    it('positioning strategy is explicitly set', function() {
       const step = new Step({}, {
-        attachTo: { element: '.scroll-test', on: 'center' },
-        tetherOptions: {
-          optimizations: {
-            foo: 'bar'
+        attachTo: { element: '.options-test', on: 'center' },
+        options: {
+          popperOptions: {
+            strategy: 'absolute'
           }
         }
       });
 
-      const tetherOptions = getTetherOptions(parseAttachTo(step), step);
-      expect(tetherOptions.optimizations.foo).toBe('bar');
+      const popperOptions = getPopperOptions(step.options.attachTo, step);
+      expect(popperOptions.strategy).toBe('absolute');
     });
   });
 });

@@ -13,6 +13,11 @@ declare class Step extends Evented {
    * @return The newly created Step instance
    */
   constructor(tour: Tour, options: Step.StepOptions);//TODO superheri Note: Return on constructor is not possible in typescript. Could this be possible to make this the same for the constructor of the Step class?
+   
+  /**
+   * The string used as the `id` for the step.
+   */
+  id: string;
 
   /**
    * Cancel the tour
@@ -33,6 +38,18 @@ declare class Step extends Evented {
   destroy(): void;
 
   /**
+   * Returns the element for the step
+   * @return The element instance. undefined if it has never been shown, null if it has been destroyed
+   */
+  getElement(): HTMLElement | null | undefined
+
+  /**
+   * Returns the target for the step
+   * @returns The element instance. undefined if it has never been shown, null if query string has not been found
+   */
+  getTarget(): HTMLElement | null | undefined
+
+  /**
    * Returns the tour for the step
    * @return The tour instance
    */
@@ -48,6 +65,11 @@ declare class Step extends Evented {
    * @return True if the step is open and visible
    */
   isOpen(): boolean;
+
+  /**
+   * Options for the step
+   */
+  options: Step.StepOptions;
 
   /**
    * Wraps `_show` and ensures `beforeShowPromise` resolves before calling show
@@ -69,22 +91,35 @@ declare namespace Step {
    */
   interface StepOptions {
     /**
-     * What element the step should be attached to on the page.
-     * It can either be a string of the form "element on", or an object with those properties.
-     * For example: ".some #element left", or {element: '.some #element', on: 'left'}.
-     * If you use the object syntax, element can also be a DOM element. If you don’t specify an attachTo the
-     * element will appear in the middle of the screen.
+     * The element the step should be attached to on the page.
+     * An object with properties `element` and `on`.
+     *
+     * ```js
+     * const step = new Step(tour, {
+     *   attachTo: { element: '.some .selector-path', on: 'left' },
+     *   ...moreOptions
+     * });
+     * ```
+     *
+     * If you don’t specify an attachTo the element will appear in the middle of the screen.
+     * If you omit the `on` portion of `attachTo`, the element will still be highlighted, but the tooltip will appear
+     * in the middle of the screen, without an arrow pointing to the target.
      */
-    attachTo?: StepOptionsAttachTo | string;
+    attachTo?: StepOptionsAttachTo;
 
     /**
      * An action on the page which should advance shepherd to the next step.
-     * It can be of the form `"selector event"`, or an object with those properties.
-     * For example: `".some-element click"`, or `{selector: '.some-element', event: 'click'}`.
-     * It doesn’t have to be an event inside the tour, it can be any event fired on any element on the page.
-     * You can also always manually advance the Tour by calling `myTour.next()`
+     * It should be an object with a string `selector` and an `event` name
+     * ```js
+     * const step = new Step(tour, {
+     *   advanceOn: { selector: '.some .selector-path', event: 'click' },
+     *   ...moreOptions
+     * });
+     * ```
+     * `event` doesn’t have to be an event inside the tour, it can be any event fired on any element on the page.
+     * You can also always manually advance the Tour by calling `myTour.next()`.
      */
-    advanceOn?: StepOptionsAdvanceOn | string;
+    advanceOn?: StepOptionsAdvanceOn;
 
     /**
      * Whether to display the arrow for the tooltip or not
@@ -109,6 +144,11 @@ declare namespace Step {
     cancelIcon?: StepOptionsCancelIcon;
 
     /**
+     * A boolean, that when set to false, will set `pointer-events: none` on the target.
+     */
+    canClickTarget?: boolean;
+
+    /**
      * A string of extra classes to add to the step's content element.
      */
     classes?: string;
@@ -128,6 +168,16 @@ declare namespace Step {
      * An amount of padding to add around the modal overlay opening
      */
     modalOverlayOpeningPadding?: number;
+
+    /**
+     * An amount of border radius to add around the modal overlay opening
+     */
+    modalOverlayOpeningRadius?: number;
+
+    /**
+     * Extra [options to pass to Popper]{@link https://popper.js.org/docs/v2/}
+     */
+    popperOptions?: object;
 
     /**
      * Should the element be scrolled to when this step is shown?
@@ -158,11 +208,6 @@ declare namespace Step {
     text?: string | ReadonlyArray<string> | HTMLElement | (() => string | ReadonlyArray<string> | HTMLElement);
 
     /**
-     * Extra [options to pass to tether]{@link http://tether.io/}
-     */
-    tetherOptions?: object;
-
-    /**
      * The step's title. It becomes an `h3` at the top of the step.
      * ```
      * - HTML string
@@ -184,10 +229,11 @@ declare namespace Step {
     when?: StepOptionsWhen;
   }
 
+  type PopperPlacement = 'auto'|'auto-start'|'auto-end'|'top'|'top-start'|'top-end'|'bottom'|'bottom-start'|'bottom-end'|'right'|'right-start'|'right-end'|'left'|'left-start'|'left-end';
+
   interface StepOptionsAttachTo {
     element?: HTMLElement | string;
-
-    on?: string;
+    on?: PopperPlacement;
   }
 
   interface StepOptionsAdvanceOn {
@@ -207,37 +253,33 @@ declare namespace Step {
      * }
      * ```
      */
-    action?: (() => void);
+    action?: ((this: Tour) => void);
 
     /**
      * Extra classes to apply to the `<a>`
      */
     classes?: string;
-
-    /**
-     * A hash of events to bind onto the button, for example
-     * `{'mouseover': function(){}}`. Adding a `click` event to events when you already have an `action` specified is not supported.
-     * You can use events to skip steps or navigate to specific steps, with something like:
-     * ```js
-     * events: {
-     *   click: function() {
-     *     return Shepherd.activeTour.show('some_step_name');
-     *   }
-     * }
-     * ```
-     */
-    events?: StepOptionsButtonEvent;
-
-    /**
-     * The HTML text of the button
-     */
-    text?: string;
-
+    
     /**
      * Whether the button should be disabled
      * When the value is `true`, or the function returns `true` the button will be disabled
      */
     disabled?: boolean | (() => boolean);
+
+    /**
+     * The aria-label text of the button
+     */
+    label?: string;
+    
+    /**
+     * A boolean, that when true, adds a `shepherd-button-secondary` class to the button.
+     */
+    secondary?: boolean;
+
+    /**
+     * The HTML text of the button
+     */
+    text?: string;
   }
 
   interface StepOptionsButtonEvent {
@@ -250,7 +292,7 @@ declare namespace Step {
   }
 
   interface StepOptionsWhen {
-    [key: string]: (() => void);
+    [key: string]: ((this: Step) => void);
   }
 }
 

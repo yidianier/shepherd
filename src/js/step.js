@@ -1,13 +1,18 @@
-import { Evented } from '../../node_modules/tether/src/js/evented.js';
+import merge from 'deepmerge';
+import { Evented } from './evented.js';
 import autoBind from './utils/auto-bind.js';
-import { isElement, isFunction, isUndefined } from './utils/type-check.js';
+import { isElement, isHTMLElement, isFunction, isUndefined } from './utils/type-check.js';
 import { bindAdvance } from './utils/bind.js';
-import { setupTooltip, parseAttachTo, normalizePrefix, uuid } from './utils/general.js';
+import {
+  setupTooltip,
+  parseAttachTo,
+  normalizePrefix,
+  uuid
+} from './utils/general.js';
 import ShepherdElement from './components/shepherd-element.svelte';
 
 // Polyfills
 import smoothscroll from 'smoothscroll-polyfill';
-
 smoothscroll.polyfill();
 
 /**
@@ -18,31 +23,31 @@ export class Step extends Evented {
   /**
    * Create a step
    * @param {Tour} tour The tour for the step
-   * @param {Object} options The options for the step
-   * @param {Object} options.arrow Whether to display the arrow for the tooltip or not.
-   * @param {Object} options.attachTo What element the step should be attached to on the page.
-   * It should be an object with the properties `element` and `on`, where `element` is an element selector string
-   * or a DOM element and `on` is the optional direction to place the Tippy tooltip.
+   * @param {object} options The options for the step
+   * @param {boolean} options.arrow Whether to display the arrow for the tooltip or not. Defaults to `true`.
+   * @param {object} options.attachTo The element the step should be attached to on the page.
+   * An object with properties `element` and `on`.
    *
    * ```js
-   * const new Step(tour, {
+   * const step = new Step(tour, {
    *   attachTo: { element: '.some .selector-path', on: 'left' },
    *   ...moreOptions
-   * })'
+   * });
    * ```
    *
    * If you don’t specify an attachTo the element will appear in the middle of the screen.
    * If you omit the `on` portion of `attachTo`, the element will still be highlighted, but the tooltip will appear
    * in the middle of the screen, without an arrow pointing to the target.
-   * @param {HTMLElement|string} options.attachTo.element
-   * @param {string} options.attachTo.on
+   * @param {HTMLElement|string} options.attachTo.element An element selector string or a DOM element.
+   * @param {string} options.attachTo.on The optional direction to place the Popper tooltip relative to the element.
+   *   - Possible string values: 'auto', 'auto-start', 'auto-end', 'top', 'top-start', 'top-end', 'bottom', 'bottom-start', 'bottom-end', 'right', 'right-start', 'right-end', 'left', 'left-start', 'left-end'
    * @param {Object} options.advanceOn An action on the page which should advance shepherd to the next step.
    * It should be an object with a string `selector` and an `event` name
    * ```js
-   * const new Step(tour, {
+   * const step = new Step(tour, {
    *   advanceOn: { selector: '.some .selector-path', event: 'click' },
    *   ...moreOptions
-   * })'
+   * });
    * ```
    * `event` doesn’t have to be an event inside the tour, it can be any event fired on any element on the page.
    * You can also always manually advance the Tour by calling `myTour.next()`.
@@ -60,10 +65,10 @@ export class Step extends Evented {
    * }
    * ```
    * @param {string} options.buttons.button.classes Extra classes to apply to the `<a>`
-   * @param {boolean} options.buttons.button.secondary If true, a shepherd-button-secondary class is applied to the button
-   * @param {string} options.buttons.button.text The HTML text of the button
    * @param {boolean} options.buttons.button.disabled Should the button be disabled?
    * @param {string} options.buttons.button.label The aria-label text of the button
+   * @param {boolean} options.buttons.button.secondary If true, a shepherd-button-secondary class is applied to the button
+   * @param {string} options.buttons.button.text The HTML text of the button
    * @param {boolean} options.canClickTarget A boolean, that when set to false, will set `pointer-events: none` on the target
    * @param {object} options.cancelIcon Options for the cancel icon
    * @param {boolean} options.cancelIcon.enabled Should a cancel “✕” be shown in the header of the step?
@@ -72,13 +77,15 @@ export class Step extends Evented {
    * @param {string} options.highlightClass An extra class to apply to the `attachTo` element when it is
    * highlighted (that is, when its step is active). You can then target that selector in your CSS.
    * @param {string} options.id The string to use as the `id` for the step.
+   * @param {number} options.modalOverlayOpeningPadding An amount of padding to add around the modal overlay opening
+   * @param {number} options.modalOverlayOpeningRadius An amount of border radius to add around the modal overlay opening
+   * @param {object} options.popperOptions Extra options to pass to Popper
    * @param {boolean|Object} options.scrollTo Should the element be scrolled to when this step is shown? If true, uses the default `scrollIntoView`,
    * if an object, passes that object as the params to `scrollIntoView` i.e. `{behavior: 'smooth', block: 'center'}`
    * @param {function} options.scrollToHandler A function that lets you override the default scrollTo behavior and
    * define a custom action to do the scrolling, and possibly other logic.
    * @param {function} options.showOn A function that, when it returns `true`, will show the step.
    * If it returns false, the step will be skipped.
-   * @param {string} options.tetherOptions Extra options to pass to tether
    * @param {string} options.text The text in the body of the step. It can be one of three types:
    * ```
    * - HTML string
@@ -90,7 +97,7 @@ export class Step extends Evented {
    * - HTML string
    * - `Function` to be executed when the step is built. It must return HTML string.
    * ```
-   * @param {Object} options.when You can define `show`, `hide`, etc events inside `when`. For example:
+   * @param {object} options.when You can define `show`, `hide`, etc events inside `when`. For example:
    * ```js
    * when: {
    *   show: function() {
@@ -98,13 +105,14 @@ export class Step extends Evented {
    *   }
    * }
    * ```
-   * @param {Number} options.modalOverlayOpeningPadding An amount of padding to add around the modal overlay opening
    * @return {Step} The newly created Step instance
    */
   constructor(tour, options = {}) {
     super(tour, options);
     this.tour = tour;
-    this.classPrefix = this.tour.options ? normalizePrefix(this.tour.options.classPrefix) : '';
+    this.classPrefix = this.tour.options
+      ? normalizePrefix(this.tour.options.classPrefix)
+      : '';
     this.styles = tour.styles;
 
     autoBind(this);
@@ -133,7 +141,7 @@ export class Step extends Evented {
   }
 
   /**
-   * Remove the step, delete the step's element, and destroy the tippy instance for the step
+   * Remove the step, delete the step's element, and destroy the Popper instance for the step.
    * Triggers `destroy` event
    */
   destroy() {
@@ -142,7 +150,7 @@ export class Step extends Evented {
       this.tooltip = null;
     }
 
-    if (isElement(this.el) && this.el.parentNode) {
+    if (isHTMLElement(this.el) && this.el.parentNode) {
       this.el.parentNode.removeChild(this.el);
       this.el = null;
     }
@@ -182,6 +190,15 @@ export class Step extends Evented {
   }
 
   /**
+   * Checks if the step should be centered or not
+   * @return {boolean} True if the step is centered
+   */
+  isCentered() {
+    const attachToOptions = parseAttachTo(this);
+    return !attachToOptions.element || !attachToOptions.on;
+  }
+
+  /**
    * Check if the step is open and visible
    * @return {boolean} True if the step is open and visible
    */
@@ -217,6 +234,22 @@ export class Step extends Evented {
   }
 
   /**
+   * Returns the element for the step
+   * @return {HTMLElement|null|undefined} The element instance. undefined if it has never been shown, null if it has been destroyed
+   */
+  getElement() {
+    return this.el;
+  }
+
+  /**
+   * Returns the target for the step
+   * @return {HTMLElement|null|undefined} The element instance. undefined if it has never been shown, null if query string has not been found
+   */
+  getTarget() {
+    return this.target;
+  }
+
+  /**
    * Creates Shepherd element for step based on options
    *
    * @return {Element} The DOM element for the step tooltip
@@ -228,14 +261,13 @@ export class Step extends Evented {
 
     this.shepherdElementComponent = new ShepherdElement({
       target: document.body,
-      props:
-        {
-          classPrefix: this.classPrefix,
-          descriptionId,
-          labelId,
-          step: this,
-          styles: this.styles
-        }
+      props: {
+        classPrefix: this.classPrefix,
+        descriptionId,
+        labelId,
+        step: this,
+        styles: this.styles
+      }
     });
 
     return this.shepherdElementComponent.getElement();
@@ -254,7 +286,10 @@ export class Step extends Evented {
 
     if (isFunction(this.options.scrollToHandler)) {
       this.options.scrollToHandler(element);
-    } else if (isElement(element) && typeof element.scrollIntoView === 'function') {
+    } else if (
+      isElement(element) &&
+      typeof element.scrollIntoView === 'function'
+    ) {
       element.scrollIntoView(scrollToOptions);
     }
   }
@@ -279,9 +314,7 @@ export class Step extends Evented {
     ];
     const uniqClasses = new Set(allClasses);
 
-    return Array.from(uniqClasses)
-      .join(' ')
-      .trim();
+    return Array.from(uniqClasses).join(' ').trim();
   }
 
   /**
@@ -290,8 +323,10 @@ export class Step extends Evented {
    * @private
    */
   _setOptions(options = {}) {
-    const tourOptions =
+    let tourOptions =
       this.tour && this.tour.options && this.tour.options.defaultStepOptions;
+
+    tourOptions = merge({}, tourOptions || {});
 
     this.options = Object.assign(
       {
@@ -316,7 +351,7 @@ export class Step extends Evented {
   }
 
   /**
-   * Create the element and set up the Tether instance
+   * Create the element and set up the Popper instance
    * @private
    */
   _setupElements() {
@@ -329,13 +364,12 @@ export class Step extends Evented {
     if (this.options.advanceOn) {
       bindAdvance(this);
     }
-
     setupTooltip(this);
   }
 
   /**
    * Triggers `before-show`, generates the tooltip DOM content,
-   * sets up a Tether instance for the tooltip, then triggers `show`.
+   * sets up a Popper instance for the tooltip, then triggers `show`.
    * @private
    */
   _show() {
@@ -343,24 +377,30 @@ export class Step extends Evented {
 
     this._setupElements();
 
+    if (!this.tour.modal) {
+      this.tour._setupModal();
+    }
+
     this.tour.modal.setupForStep(this);
     this._styleTargetElementForStep(this);
-
     this.el.hidden = false;
 
-    this.tooltip.position();
-
-    const target = this.target || document.body;
-    target.classList.add(`${this.classPrefix}shepherd-enabled`, `${this.classPrefix}shepherd-target`);
-
+    // start scrolling to target before showing the step
     if (this.options.scrollTo) {
       setTimeout(() => {
         this._scrollTo(this.options.scrollTo);
       });
     }
 
+    this.el.hidden = false;
+
+    const content = this.shepherdElementComponent.getElement();
+    const target = this.target || document.body;
+    target.classList.add(`${this.classPrefix}shepherd-enabled`);
+    target.classList.add(`${this.classPrefix}shepherd-target`);
+    content.classList.add('shepherd-enabled');
+
     this.trigger('show');
-    this.el.focus();
   }
 
   /**
@@ -396,6 +436,9 @@ export class Step extends Evented {
       this.target.classList.remove(this.options.highlightClass);
     }
 
-    this.target.classList.remove(`${this.classPrefix}shepherd-enabled`, `${this.classPrefix}shepherd-target`);
+    this.target.classList.remove(
+      `${this.classPrefix}shepherd-enabled`,
+      `${this.classPrefix}shepherd-target`
+    );
   }
 }

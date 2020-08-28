@@ -1,7 +1,7 @@
-import { Evented } from '../../node_modules/tether/src/js/evented.js';
+import { Evented } from './evented.js';
 import { Step } from './step.js';
 import autoBind from './utils/auto-bind.js';
-import { isElement, isFunction, isString, isUndefined } from './utils/type-check.js';
+import { isHTMLElement, isFunction, isString, isUndefined } from './utils/type-check.js';
 import { cleanupSteps } from './utils/cleanup.js';
 import { normalizePrefix, uuid } from './utils/general.js';
 import ShepherdModal from './components/shepherd-modal.svelte';
@@ -17,7 +17,7 @@ export class Tour extends Evented {
    * @param {Object} options The options for the tour
    * @param {boolean} options.confirmCancel If true, will issue a `window.confirm` before cancelling
    * @param {string} options.confirmCancelMessage The message to display in the confirm dialog
-   * @param {string} options.classPrefix The prefix to add to all the `shepherd-*` class names.
+   * @param {string} options.classPrefix The prefix to add to the `shepherd-enabled` and `shepherd-target` class names as well as the `data-shepherd-step-id`.
    * @param {Object} options.defaultStepOptions Default options for Steps ({@link Step#constructor}), created through `addStep`
    * @param {boolean} options.exitOnEsc Exiting the tour with the escape key will be enabled unless this is explicitly
    * set to false.
@@ -59,15 +59,6 @@ export class Tour extends Evented {
           Shepherd.trigger(e, opts);
         });
       })(event);
-    });
-
-    this.modal = new ShepherdModal({
-      target: options.modalContainer || document.body,
-      props:
-        {
-          classPrefix: this.classPrefix,
-          styles: this.styles
-        }
     });
 
     this._setTourID();
@@ -264,6 +255,9 @@ export class Tour extends Evented {
     this.focusedElBeforeOpen = document.activeElement;
 
     this.currentStep = null;
+
+    this._setupModal();
+
     this._setupActiveTour();
     this.next();
   }
@@ -286,10 +280,22 @@ export class Tour extends Evented {
     Shepherd.activeTour = null;
     this.trigger('inactive', { tour: this });
 
-    this.modal.hide();
+    if (this.modal) {
+      this.modal.hide();
+    }
+
+    if (event === 'cancel' || event === 'complete') {
+      if (this.modal) {
+        const modalContainer = document.querySelector('.shepherd-modal-overlay-container');
+
+        if (modalContainer) {
+          modalContainer.remove();
+        }
+      }
+    }
 
     // Focus the element that was focused before the tour started
-    if (isElement(this.focusedElBeforeOpen)) {
+    if (isHTMLElement(this.focusedElBeforeOpen)) {
       this.focusedElBeforeOpen.focus();
     }
   }
@@ -302,6 +308,21 @@ export class Tour extends Evented {
     this.trigger('active', { tour: this });
 
     Shepherd.activeTour = this;
+  }
+
+  /**
+   * _setupModal create the modal container and instance
+   * @private
+   */
+  _setupModal() {
+    this.modal = new ShepherdModal({
+      target: this.options.modalContainer || document.body,
+      props:
+      {
+        classPrefix: this.classPrefix,
+        styles: this.styles
+      }
+    });
   }
 
   /**

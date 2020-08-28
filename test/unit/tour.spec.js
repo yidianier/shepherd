@@ -2,6 +2,7 @@ import _ from 'lodash';
 import { stub } from 'sinon';
 import Shepherd from '../../src/js/shepherd';
 import { Step } from '../../src/js/step';
+import { setupTooltip } from '../../src/js/utils/general.js';
 import { spy } from 'sinon';
 
 // since importing non UMD, needs assignment
@@ -12,9 +13,23 @@ const DEFAULT_STEP_CLASS = 'shepherd-step-tooltip';
 describe('Tour | Top-Level Class', function() {
   let instance, shouldShowStep;
 
+  const showOn = () => {
+    return true;
+  };
+
+  const when = {
+    show() {
+    }
+  };
+
   const defaultStepOptions = {
     classes: DEFAULT_STEP_CLASS,
-    scrollTo: true
+    scrollTo: true,
+    popperOptions: {
+      modifiers: [{ name: 'offset', options: { offset: [0, 32] } }]
+    },
+    showOn,
+    when
   };
 
   afterEach(() => {
@@ -29,11 +44,20 @@ describe('Tour | Top-Level Class', function() {
     });
 
     it('returns the default options on the instance', function() {
-      instance = new Shepherd.Tour({ defaultStepOptions });
+      instance = new Shepherd.Tour({
+        defaultStepOptions, steps: [{
+          scrollTo: false
+        }]
+      });
 
       expect(instance.options.defaultStepOptions).toEqual({
         classes: DEFAULT_STEP_CLASS,
-        scrollTo: true
+        scrollTo: true,
+        popperOptions: {
+          modifiers: [{ name: 'offset', options: { offset: [0, 32] } }]
+        },
+        showOn,
+        when
       });
     });
 
@@ -394,6 +418,116 @@ describe('Tour | Top-Level Class', function() {
         expect(setupFuncSpy.callCount).toBe(1);
         expect(Shepherd.activeTour).toBe(instance);
       });
+    });
+  });
+
+  describe('popperOptions', () => {
+    it('applies the default modifiers from defaultStepOptions', function() {
+      instance = new Shepherd.Tour({ defaultStepOptions });
+
+      const step = instance.addStep({
+        id: 'test',
+        title: 'This is a test step for our tour'
+      });
+
+      instance.start();
+
+      const popperOptions = setupTooltip(step);
+
+      expect(popperOptions.modifiers.length).toBe(4);
+    });
+
+    it('adds a step modifer to default modifiers', function() {
+      instance = new Shepherd.Tour({ defaultStepOptions });
+
+      const step = instance.addStep({
+        id: 'test',
+        title: 'This is a test step for our tour',
+        popperOptions: {
+          modifiers: [{ name: 'foo', options: 'bar' }]
+        }
+      });
+
+      instance.start();
+
+      const popperOptions = setupTooltip(step);
+
+      expect(popperOptions.modifiers.length).toBe(5);
+    });
+
+    it('correctly changes modifiers when going from centered to attached', function() {
+      const div = document.createElement('div');
+      div.classList.add('modifiers-test');
+      document.body.appendChild(div);
+      instance = new Shepherd.Tour({ defaultStepOptions });
+
+      const centeredStep = instance.addStep({
+        id: 'centered',
+        title: 'This is a centered step for our tour',
+        popperOptions: {
+          modifiers: [{ name: 'foo', options: 'bar' }]
+        }
+      });
+
+      const attachedStep = instance.addStep({
+        attachTo: { element: '.modifiers-test', on: 'top' },
+        id: 'attached',
+        title: 'This is an attached step for our tour',
+        popperOptions: {
+          modifiers: [{ name: 'foo', options: 'bar' }]
+        }
+      });
+
+      instance.start();
+
+      let popperOptions = setupTooltip(centeredStep);
+      let modifierNames = popperOptions.modifiers.map((modifier) => modifier.name);
+      expect(popperOptions.modifiers.length).toBe(5);
+      expect(modifierNames.includes('applyStyles')).toBe(true);
+      expect(modifierNames.includes('computeStyles')).toBe(true);
+      expect(modifierNames.includes('offset')).toBe(true);
+      expect(modifierNames.includes('foo')).toBe(true);
+      expect(modifierNames.includes('preventOverflow')).toBe(false);
+
+      instance.next();
+
+      popperOptions = setupTooltip(attachedStep);
+      modifierNames = popperOptions.modifiers.map((modifier) => modifier.name);
+      expect(popperOptions.modifiers.length).toBe(4);
+      expect(modifierNames.includes('preventOverflow')).toBe(true);
+      expect(modifierNames.includes('offset')).toBe(true);
+      expect(modifierNames.includes('foo')).toBe(true);
+      expect(modifierNames.includes('applyStyles')).toBe(false);
+      expect(modifierNames.includes('computeStyles')).toBe(false);
+
+      document.body.removeChild(div);
+    });
+  });
+
+  describe('shepherdModalOverlayContainer', function() {
+    beforeEach(() => {
+      instance = new Shepherd.Tour({ useModalOverlay: true });
+    });
+    it('appends shepherdModalOverlayContainer to DOM when it does not exist', async() => {
+      expect(document.querySelector('.shepherd-modal-overlay-container')).not.toBeInTheDocument();
+
+      instance.start();
+
+      setTimeout(() => {
+        expect(document.querySelector('.shepherd-modal-overlay-container')).toBeInTheDocument();
+      }, 200);
+    });
+
+    it('removes shepherdModalOverlayContainer from DOM when it is complete', () => {
+      instance.start();
+
+      setTimeout(() => {
+        expect(document.querySelector('.shepherd-modal-overlay-container')).toBeInTheDocument();
+      }, 200);
+
+      instance.complete();
+
+      expect(document.querySelector('.shepherd-modal-overlay-container')).not.toBeInTheDocument();
     });
   });
 });

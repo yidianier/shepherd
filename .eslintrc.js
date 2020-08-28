@@ -16,7 +16,6 @@ module.exports = {
     'svelte3'
   ],
   rules: {
-    'complexity': ['warn', 6],
     'max-lines': ['warn', { max: 250, skipBlankLines: true, skipComments: true }],
     'no-console': 'off',
     'prefer-const': 'off'
@@ -30,6 +29,7 @@ module.exports = {
     // node files
     {
       files: [
+        '.eslintrc.js',
         'babel.config.js',
         'jest.config.js',
         'rollup.config.js',
